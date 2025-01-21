@@ -123,7 +123,7 @@ local function populateMaterialsDropdown(model)
     materials = {}  -- Clear previous materials
 
     -- Iterate through Enum.Material and add all material names to the list
-    for _, material in pairs(materialRoot:GetChildren)) do
+    for _, material in pairs(materialRoot:GetChildren()) do
         table.insert(materials, material)  -- Add material to the dropdown list
     end
 
