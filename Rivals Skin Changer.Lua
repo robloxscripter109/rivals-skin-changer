@@ -38,10 +38,15 @@ local Window = Rayfield:CreateWindow({
 local Tab = Window:CreateTab("Skin Changer", nil) -- Title, Image
 
 local Section = Tab:CreateSection("Skin Changer")
+local weapons = game.StarterPlayer.StarterPlayerScripts.Assets.ViewModels:GetChildren()
+local guns = {}
+for _, gun in ipairs(weapons) do
+    table.insert(guns, gun.Name) -- Assuming the "Name" property is what you want
+end
 
 local Dropdown = Tab:CreateDropdown({
    Name = "Weapon Select",
-   Options = {"Sniper","Option 2"},
+   Options = guns,
    CurrentOption = {"Sniper"},
    MultipleOptions = false,
    Flag = "Dropdown1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
@@ -50,7 +55,7 @@ local Dropdown = Tab:CreateDropdown({
    -- The variable (Options) is a table of strings for the current selected options
    end,
 })
-local Dropdown = Tab:CreateDropdown({
+local Dropdown2 = Tab:CreateDropdown({
    Name = "Skin Select",
    Options = {"Pixel Sniper Skin","Option 2"},
    CurrentOption = {"blank"},
@@ -68,14 +73,14 @@ for _, wrap in ipairs(wrapstring) do
     table.insert(wraps, wrap.Name) -- Assuming the "Name" property is what you want
 end
 
-local Dropdown = Tab:CreateDropdown({
+local Dropdown3 = Tab:CreateDropdown({
    Name = "Wrap Select",
    Options = wraps,
    CurrentOption = {"blank"},
    MultipleOptions = false,
-   Flag = "Dropdown2", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+   Flag = "Dropdown3", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
    Callback = function(Options)
-   -- The function that takes place when the selected option is changed
+	-- The function that takes place when the selected option is changed
    -- The variable (Options) is a table of strings for the current selected options
    end,
 })
