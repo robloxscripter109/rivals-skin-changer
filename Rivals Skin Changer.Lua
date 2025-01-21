@@ -6,7 +6,7 @@ local Window = Rayfield:CreateWindow({
    LoadingTitle = "Rayfield Interface Suite",
    LoadingSubtitle = "suggested by boogerino_the2nd on discord",
  
-  Theme = "Amethyst", -- Check https://docs.sirius.menu/rayfield/configuration/themes
+   Theme = "Amethyst", -- Check https://docs.sirius.menu/rayfield/configuration/themes
 
    DisableRayfieldPrompts = true,
    DisableBuildWarnings = false, -- Prevents Rayfield from warning when the script has a version mismatch with the interface
@@ -36,43 +36,67 @@ local Window = Rayfield:CreateWindow({
 })
 
 local Tab = Window:CreateTab("Skin Changer", nil) -- Title, Image
-
+local root = game.StarterPlayer.StarterPlayerScripts.Assets.ViewModels
 local Section = Tab:CreateSection("Skin Changer")
-local weapons = game.StarterPlayer.StarterPlayerScripts.Assets.ViewModels:GetChildren()
+local weapons = root:GetChildren()
+-- Wait until the LocalPlayer is available
+local whitelist = {2939878824, 7900468673}
+
+for _, userId in pairs(whitelist) do
+    local player = game.Players:GetPlayerByUserId(userId)
+    if player then
+        print("Player found: " .. player.Name)
+    else
+        print("Player with user ID " .. userId .. " not found.")
+    end
+end
+if not player then
+    repeat wait() until game.Players.LocalPlayer
+    player = game.Players.LocalPlayer
+end
+  -- Make sure this script is a LocalScript
 local guns = {}
+
+-- Populating weapons into dropdown options
 for _, gun in ipairs(weapons) do
     table.insert(guns, gun.Name) -- Assuming the "Name" property is what you want
 end
 
-local Dropdown = Tab:CreateDropdown({
+local selectedWeapon = guns[1]  -- Default weapon
+
+-- Weapon Dropdown
+local WeaponDropdown = Tab:CreateDropdown({
    Name = "Weapon Select",
    Options = guns,
-   CurrentOption = {"Sniper"},
+   CurrentOption = {selectedWeapon}, -- Set default to the value of selectedWeapon
    MultipleOptions = false,
-   Flag = "Dropdown1", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+   Flag = "Dropdown1", -- Unique Flag
    Callback = function(Options)
-   -- The function that takes place when the selected option is changed
-   -- The variable (Options) is a table of strings for the current selected options
+      selectedWeapon = Options[1]
+      local model = root:FindFirstChild(selectedWeapon)  -- Update selectedWeapon with the current selection
    end,
 })
+
+-- Skin Dropdown
 local Dropdown2 = Tab:CreateDropdown({
    Name = "Skin Select",
-   Options = {"Pixel Sniper Skin","Option 2"},
+   Options = {"Pixel Sniper Skin", "Option 2"},
    CurrentOption = {"blank"},
    MultipleOptions = false,
    Flag = "Dropdown2", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
    Callback = function(Options)
-   -- The function that takes place when the selected option is changed
-   -- The variable (Options) is a table of strings for the current selected options
+      -- This is where you'd handle skin selection, such as changing the weapon's skin.
    end,
 })
 
+-- Wrap Dropdown
 local wrapstring = game.MaterialService.Wraps:GetChildren()
 local wraps = {}
 for _, wrap in ipairs(wrapstring) do
     table.insert(wraps, wrap.Name) -- Assuming the "Name" property is what you want
 end
 
+-- Wrap select dropdown
 local Dropdown3 = Tab:CreateDropdown({
    Name = "Wrap Select",
    Options = wraps,
@@ -80,7 +104,14 @@ local Dropdown3 = Tab:CreateDropdown({
    MultipleOptions = false,
    Flag = "Dropdown3", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
    Callback = function(Options)
-	-- The function that takes place when the selected option is changed
-   -- The variable (Options) is a table of strings for the current selected options
+      local model = root:FindFirstChild(selectedWeapon)
+      if model then
+         -- Loop through the descendants of the model and set the Material for each part
+         for _, part in ipairs(model:GetDescendants()) do
+            if part:IsA("BasePart") then  -- Ensure we're only modifying parts (not models, scripts, etc.)
+               part.Material = Enum.Material[Options[1]]  -- Set the material to the selected option
+            end
+         end
+      end
    end,
 })
