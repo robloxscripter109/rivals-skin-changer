@@ -57,23 +57,11 @@ local WeaponDropdown = Tab:CreateDropdown({
    Name = "Weapon Select",
    Options = guns,
    CurrentOption = {selectedWeapon}, -- Set default to the value of selectedWeapon
-   MultipleOptions = false,
+   MultipleOptions = true,
    Flag = "Dropdown1", -- Unique Flag
    Callback = function(Options)
       selectedWeapon = Options[1]
       local model = root:FindFirstChild(selectedWeapon)  -- Update selectedWeapon with the current selection
-   end,
-})
-
--- Skin Dropdown
-local Dropdown2 = Tab:CreateDropdown({
-   Name = "Skin Select",
-   Options = {"Pixel Sniper Skin", "Option 2"},
-   CurrentOption = {"blank"},
-   MultipleOptions = false,
-   Flag = "Dropdown2", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
-   Callback = function(Options)
-      -- This is where you'd handle skin selection, such as changing the weapon's skin.
    end,
 })
 
@@ -100,9 +88,9 @@ local function applyWrapDecals(wrap)
     end
     appliedDecals = {} -- Reset the applied decals table
 
-    -- Apply decals for the new wrap
-    for _, decal in ipairs(wrap:GetChildren()) do
-        if decal:IsA("Texture") then
+    -- Apply textures for the new wrap
+    for _, textures in ipairs(wrap:GetChildren()) do
+        if textures:IsA("Texture") then
             -- Apply the decal to corresponding parts in the weapon
             local model = root:FindFirstChild(selectedWeapon)
             if model then
@@ -124,7 +112,7 @@ local Dropdown3 = Tab:CreateDropdown({
    Name = "Wrap Select",
    Options = wraps,
    CurrentOption = {"blank"},
-   MultipleOptions = false,
+   MultipleOptions = true,
    Flag = "Dropdown3", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
    Callback = function(Options)
       local selectedWrapName = Options[1]
