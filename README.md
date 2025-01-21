@@ -9,3 +9,6 @@ tested executors, xeno dm me if you test your executor if it works i will put it
 
 if you dont want to copy and past the lua file just do this
 loadstring(game:HttpGet('https://raw.githubusercontent.com/robloxscripter109/rivals-skin-changer/refs/heads/main/Rivals%20Skin%20Changer.Lua'))()
+
+change logs:
+added wrap changer (currently just shows every wrap in the game)
