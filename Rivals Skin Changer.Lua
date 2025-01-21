@@ -1,5 +1,3 @@
--- made by average_mkwii.player on discord dm for bug reports or feature requests, remember i am new to scripting do not ask for much
-
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
@@ -52,9 +50,9 @@ local Dropdown = Tab:CreateDropdown({
    end,
 })
 local Dropdown = Tab:CreateDropdown({
-   Name = "Weapon Select",
+   Name = "Skin Select",
    Options = {"Pixel Sniper Skin","Option 2"},
-   CurrentOption = {"Sniper"},
+   CurrentOption = {"blank"},
    MultipleOptions = false,
    Flag = "Dropdown2", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
    Callback = function(Options)
