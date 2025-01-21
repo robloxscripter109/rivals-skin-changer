@@ -6,7 +6,7 @@ local Window = Rayfield:CreateWindow({
    Icon = 0, -- Icon in Topbar. Can use Lucide Icons (string) or Roblox Image (number). 0 to use no icon (default).
    LoadingTitle = "Rayfield Interface Suite",
    LoadingSubtitle = "suggested by boogerino_the2nd on discord",
- 
+
    Theme = "Amethyst", -- Check https://docs.sirius.menu/rayfield/configuration/themes
 
    DisableRayfieldPrompts = true,
@@ -40,10 +40,9 @@ local Tab = Window:CreateTab("Skin Changer", nil) -- Title, Image
 local root = plr.PlayerScripts.Assets.ViewModels
 local Section = Tab:CreateSection("Skin Changer")
 local weapons = root:GetChildren()
-
 -- Wait until the LocalPlayer is available
 
--- Make sure this script is a LocalScript
+  -- Make sure this script is a LocalScript
 local guns = {}
 
 -- Populating weapons into dropdown options
@@ -58,6 +57,7 @@ local WeaponDropdown = Tab:CreateDropdown({
    Name = "Weapon Select",
    Options = guns,
    CurrentOption = {selectedWeapon}, -- Set default to the value of selectedWeapon
+   MultipleOptions = false,
    MultipleOptions = true,
    Flag = "Dropdown1", -- Unique Flag
    Callback = function(Options)
@@ -82,72 +82,75 @@ end
 local appliedDecals = {}
 
 -- Function to apply the decals from a selected wrap
-local function applyWrapDecals(wrap)
-    -- Clear previous decals
-    for _, decal in ipairs(appliedDecals) do
-        decal:Destroy()
-    end
-    appliedDecals = {} -- Reset the applied decals table
 
+appliedDecals = {} -- Reset the applied decals table
+
+    -- Apply decals for the new wrap
+    for _, decal in ipairs(wrapstring) do
+        if decal:IsA("Texture") then
     -- Apply textures for the new wrap
-    for _, textures in ipairs(wrap:GetChildren()) do
+    for _, textures in ipairs(wrapstring) do
         if textures:IsA("Texture") then
-            -- Find the model for the selected weapon
+            -- Apply the decal to corresponding parts in the weapon
             local model = root:FindFirstChild(selectedWeapon)
             if model then
-                -- Loop through parts of the model (filtering parts based on name, type, etc.)
                 for _, part in ipairs(model:GetDescendants()) do
                     if part:IsA("BasePart") then
-                        -- Only apply the wrap to parts that match your criteria (e.g., "handle", "stock")
-                        if part.Name == "Handle" or part.Name == "Stock" then
-                            -- Clone the decal and apply it to the part
-                            local newDecal = textures:Clone()
-                            newDecal.Parent = part
-                            table.insert(appliedDecals, newDecal)
-                        end
+                        -- Clone the decal and apply it to the part
+                        local newDecal = decal:Clone()
+                        newDecal.Parent = part
+                        table.insert(appliedDecals, newDecal)
                     end
                 end
             end
         end
     end
 end
-
--- Materials Root: This is where you can define all available materials
-local materialRoot = game.MaterialService.Wraps
-
--- Materials Dropdown Population
+end
+-- Wrap select dropdown
+local Dropdown3 = Tab:CreateDropdown({
+   Name = "Wrap Select",
+   Options = wraps,
+   CurrentOption = {Magma},
+   MultipleOptions = true,
+   Flag = "Dropdown2", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+   Callback = function(Options)
+      local selectedWrapName = Options[1]
+      local selectedWrap = plr.PlayerScripts.Assets.WrapTextures:FindFirstChild(selectedWrapName)
+      if selectedWrap then
+         -- Apply the decals from the selected wrap
+         applyWrapDecals(selectedWrap)
+    end
+end})
+materialRoot = game.MaterialService.Wraps:GetChildren()
+-- Creating the material dropdown
 local materials = {}
 
--- Function to populate the materials dropdown with all available materials
-local function populateMaterialsDropdown(model)
-    materials = {}  -- Clear previous materials
-
-    -- Iterate through Enum.Material and add all material names to the list
-    for _, material in pairs(materialRoot:GetChildren()) do
-        table.insert(materials, material)  -- Add material to the dropdown list
-    end
-
-    -- Update the materials dropdown with the collected materials
-    if #materials > 0 then
-        MaterialDropdown:UpdateOptions(materials)
-    end
+-- Populate materials list with valid material names
+for _, material in ipairs(materialRoot) do
+    table.insert(materials, material.Name)
 end
+
+-- Default selected material
+local selectedMaterial = materials[1] or "Plastic"  -- Default to the first material or "Plastic"
 
 -- Material Dropdown
 local MaterialDropdown = Tab:CreateDropdown({
    Name = "Material Select",
    Options = materials,
-   CurrentOption = {materials[1] or "Plastic"}, -- Default to the first material or "Plastic"
+   CurrentOption = {selectedMaterial},  -- Set default to the value of selectedMaterial
    MultipleOptions = false,
-   Flag = "Dropdown3", -- Unique Flag
+   Flag = "Dropdown3", -- A unique flag
    Callback = function(Options)
-      local selectedMaterial = Options[1]
-      -- Apply the selected material to all parts of the selected weapon
+      local selectedMaterialName = Options[1]
       local model = root:FindFirstChild(selectedWeapon)
+      
       if model then
+         -- Apply the selected material to all parts of the selected weapon
          for _, part in ipairs(model:GetDescendants()) do
             if part:IsA("BasePart") then
-               part.Material = Enum.Material[selectedMaterial] or Enum.Material.Plastic
+               -- Set the material of the part based on the selected option
+               part.Material = selectedMaterialName.Material or Enum.Material.Plastic
             end
          end
       end
