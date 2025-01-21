@@ -40,9 +40,10 @@ local Tab = Window:CreateTab("Skin Changer", nil) -- Title, Image
 local root = plr.PlayerScripts.Assets.ViewModels
 local Section = Tab:CreateSection("Skin Changer")
 local weapons = root:GetChildren()
+
 -- Wait until the LocalPlayer is available
 
-  -- Make sure this script is a LocalScript
+-- Make sure this script is a LocalScript
 local guns = {}
 
 -- Populating weapons into dropdown options
@@ -91,15 +92,19 @@ local function applyWrapDecals(wrap)
     -- Apply textures for the new wrap
     for _, textures in ipairs(wrap:GetChildren()) do
         if textures:IsA("Texture") then
-            -- Apply the decal to corresponding parts in the weapon
+            -- Find the model for the selected weapon
             local model = root:FindFirstChild(selectedWeapon)
             if model then
+                -- Loop through parts of the model (filtering parts based on name, type, etc.)
                 for _, part in ipairs(model:GetDescendants()) do
                     if part:IsA("BasePart") then
-                        -- Clone the decal and apply it to the part
-                        local newDecal = decal:Clone()
-                        newDecal.Parent = part
-                        table.insert(appliedDecals, newDecal)
+                        -- Only apply the wrap to parts that match your criteria (e.g., "handle", "stock")
+                        if part.Name == "Handle" or part.Name == "Stock" then
+                            -- Clone the decal and apply it to the part
+                            local newDecal = textures:Clone()
+                            newDecal.Parent = part
+                            table.insert(appliedDecals, newDecal)
+                        end
                     end
                 end
             end
@@ -107,19 +112,44 @@ local function applyWrapDecals(wrap)
     end
 end
 
--- Wrap select dropdown
-local Dropdown3 = Tab:CreateDropdown({
-   Name = "Wrap Select",
-   Options = wraps,
-   CurrentOption = {"blank"},
-   MultipleOptions = true,
-   Flag = "Dropdown3", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
+-- Materials Root: This is where you can define all available materials
+local materialRoot = game.MaterialService.Wraps
+
+-- Materials Dropdown Population
+local materials = {}
+
+-- Function to populate the materials dropdown with all available materials
+local function populateMaterialsDropdown(model)
+    materials = {}  -- Clear previous materials
+
+    -- Iterate through Enum.Material and add all material names to the list
+    for _, material in pairs(materialRoot:GetChildren)) do
+        table.insert(materials, material)  -- Add material to the dropdown list
+    end
+
+    -- Update the materials dropdown with the collected materials
+    if #materials > 0 then
+        MaterialDropdown:UpdateOptions(materials)
+    end
+end
+
+-- Material Dropdown
+local MaterialDropdown = Tab:CreateDropdown({
+   Name = "Material Select",
+   Options = materials,
+   CurrentOption = {materials[1] or "Plastic"}, -- Default to the first material or "Plastic"
+   MultipleOptions = false,
+   Flag = "Dropdown3", -- Unique Flag
    Callback = function(Options)
-      local selectedWrapName = Options[1]
-      local selectedWrap = plr.PlayerScripts.Assets.WrapTextures:FindFirstChild(selectedWrapName)
-      if selectedWrap then
-         -- Apply the decals from the selected wrap
-         applyWrapDecals(selectedWrap)
+      local selectedMaterial = Options[1]
+      -- Apply the selected material to all parts of the selected weapon
+      local model = root:FindFirstChild(selectedWeapon)
+      if model then
+         for _, part in ipairs(model:GetDescendants()) do
+            if part:IsA("BasePart") then
+               part.Material = Enum.Material[selectedMaterial] or Enum.Material.Plastic
+            end
+         end
       end
    end,
 })
