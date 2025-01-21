@@ -1,5 +1,6 @@
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
-
+local Players = game:GetService("Players")
+local plr = Players.LocalPlayer
 local Window = Rayfield:CreateWindow({
    Name = "Rivals Skin Changer Window",
    Icon = 0, -- Icon in Topbar. Can use Lucide Icons (string) or Roblox Image (number). 0 to use no icon (default).
@@ -36,24 +37,11 @@ local Window = Rayfield:CreateWindow({
 })
 
 local Tab = Window:CreateTab("Skin Changer", nil) -- Title, Image
-local root = game.StarterPlayer.StarterPlayerScripts.Assets.ViewModels
+local root = plr.PlayerScripts.Assets.ViewModels
 local Section = Tab:CreateSection("Skin Changer")
 local weapons = root:GetChildren()
 -- Wait until the LocalPlayer is available
-local whitelist = {2939878824, 7900468673}
 
-for _, userId in pairs(whitelist) do
-    local player = game.Players:GetPlayerByUserId(userId)
-    if player then
-        print("Player found: " .. player.Name)
-    else
-        print("Player with user ID " .. userId .. " not found.")
-    end
-end
-if not player then
-    repeat wait() until game.Players.LocalPlayer
-    player = game.Players.LocalPlayer
-end
   -- Make sure this script is a LocalScript
 local guns = {}
 
@@ -90,10 +78,45 @@ local Dropdown2 = Tab:CreateDropdown({
 })
 
 -- Wrap Dropdown
-local wrapstring = game.MaterialService.Wraps:GetChildren()
+local wrapstring = plr.PlayerScripts.Assets.WrapTextures:GetChildren()
 local wraps = {}
+
+-- Filter out wraps with ".exe" or ".dll" in their name
 for _, wrap in ipairs(wrapstring) do
-    table.insert(wraps, wrap.Name) -- Assuming the "Name" property is what you want
+    local wrapName = wrap.Name
+    if not (wrapName:match("%.exe$") or wrapName:match("%.dll$")) then
+        table.insert(wraps, wrapName) -- Only add to wraps if not .exe or .dll
+    end
+end
+
+-- To store applied decals
+local appliedDecals = {}
+
+-- Function to apply the decals from a selected wrap
+local function applyWrapDecals(wrap)
+    -- Clear previous decals
+    for _, decal in ipairs(appliedDecals) do
+        decal:Destroy()
+    end
+    appliedDecals = {} -- Reset the applied decals table
+
+    -- Apply decals for the new wrap
+    for _, decal in ipairs(wrap:GetChildren()) do
+        if decal:IsA("Texture") then
+            -- Apply the decal to corresponding parts in the weapon
+            local model = root:FindFirstChild(selectedWeapon)
+            if model then
+                for _, part in ipairs(model:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        -- Clone the decal and apply it to the part
+                        local newDecal = decal:Clone()
+                        newDecal.Parent = part
+                        table.insert(appliedDecals, newDecal)
+                    end
+                end
+            end
+        end
+    end
 end
 
 -- Wrap select dropdown
@@ -104,14 +127,11 @@ local Dropdown3 = Tab:CreateDropdown({
    MultipleOptions = false,
    Flag = "Dropdown3", -- A flag is the identifier for the configuration file, make sure every element has a different flag if you're using configuration saving to ensure no overlaps
    Callback = function(Options)
-      local model = root:FindFirstChild(selectedWeapon)
-      if model then
-         -- Loop through the descendants of the model and set the Material for each part
-         for _, part in ipairs(model:GetDescendants()) do
-            if part:IsA("BasePart") then  -- Ensure we're only modifying parts (not models, scripts, etc.)
-               part.Material = Enum.Material[Options[1]]  -- Set the material to the selected option
-            end
-         end
+      local selectedWrapName = Options[1]
+      local selectedWrap = plr.PlayerScripts.Assets.WrapTextures:FindFirstChild(selectedWrapName)
+      if selectedWrap then
+         -- Apply the decals from the selected wrap
+         applyWrapDecals(selectedWrap)
       end
    end,
 })
