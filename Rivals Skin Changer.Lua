@@ -188,7 +188,7 @@ local themeOptions = {
 }
 
 -- Current selected theme
-local selectedTheme = themeOptions[1] -- Default to Amethyst
+local selectedTheme = themeOptions[3] -- Default to Amethyst
 
 -- Theme Dropdown
 local ThemeDropdown = ThemeTab:CreateDropdown({
