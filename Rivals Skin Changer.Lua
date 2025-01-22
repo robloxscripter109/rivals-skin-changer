@@ -238,3 +238,164 @@ local TransparencySlider = Tab:CreateSlider({
        end
    end,
 })
+
+-- Configuration Tab
+local ConfigTab = Window:CreateTab("Configuration", nil)
+
+local savedConfig = {}  -- Table to hold the saved configurations
+
+-- Create Input for entering a custom name for the configuration
+local ConfigNameInput = ConfigTab:CreateInput({
+    Name = "Configuration Name",  -- Label for the input field
+    PlaceholderText = "Enter a name for your config",  -- Placeholder text
+    ClearTextOnFocus = true,  -- Clear text when focused
+    Flag = "ConfigNameInput",  -- Unique flag for the input field
+    Callback = function(Text)
+        -- This function will be called whenever the user enters a name
+        print("Entered config name: " ConfigNameInput.CurrentValue)
+    end,
+})
+
+-- Function to save the current weapon's wrap, color, and transparency with a custom name
+local function saveConfiguration()
+    local configName = ConfigNameInput:GetText()  -- Get the name from the input
+    if configName == "" then
+    Rayfield:Notify({
+   Title = "Error: Configuration name cannot be empty.",
+   Content = "Notification Content",
+   Duration = 6.5,
+   Image = nil,
+
+        return
+    end
+
+    local model = root:FindFirstChild(selectedWeapon)
+    if model then
+        local weaponConfig = {}
+
+        -- Loop through all the parts in the model and save the color, transparency, and wrap info
+        for _, part in ipairs(model:GetDescendants()) do
+            if part:IsA("BasePart") then
+                -- Save color and transparency for each part
+                weaponConfig[part.Name] = {
+                    color = part.Color,
+                    transparency = part.Transparency,
+                }
+
+                -- Check if the part has a texture applied and save it
+                local textureApplied = false
+                for _, decal in ipairs(part:GetChildren()) do
+                    if decal:IsA("Texture") then
+                        textureApplied = true
+                        break
+                    end
+                end
+                weaponConfig[part.Name].wrap = textureApplied and selectedWrap or nil
+            end
+        end
+
+        savedConfig[configName] = weaponConfig  -- Save with the custom name
+        print("Configuration saved for " .. configName)
+
+        -- Update the dropdown with the new config name
+        updateConfigDropdown()
+    end
+end
+
+-- Save Configuration Button
+local SaveConfigButton = ConfigTab:CreateButton({
+    Name = "Save Configuration",
+    Callback = function()
+        saveConfiguration()  -- Save the current configuration with a custom name
+    end,
+})
+
+-- Function to apply a saved configuration to the model
+local function applySavedConfiguration(weapon)
+    local model = root:FindFirstChild(weapon)
+    if model and savedConfig[weapon] then
+        local config = savedConfig[weapon]
+
+        -- Loop through all parts in the model and apply the saved configuration
+        for _, part in ipairs(model:GetDescendants()) do
+            if part:IsA("BasePart") then
+                local partConfig = config[part.Name]
+
+                if partConfig then
+                    -- Apply saved color and transparency
+                    part.Color = partConfig.color
+                    part.Transparency = partConfig.transparency
+
+                    -- Apply wrap texture if available
+                    if partConfig.wrap then
+                        clearExistingTextures(model)  -- Remove any existing textures
+                        applyNewWrapTextures(model, partConfig.wrap)  -- Apply the saved wrap texture
+                    end
+                end
+            end
+        end
+
+        print("Configuration applied for " .. weapon)
+    end
+end
+
+-- Apply Configuration Button
+local ApplyConfigButton = ConfigTab:CreateButton({
+    Name = "Apply Saved Configuration",
+    Callback = function()
+        local selectedConfig = SavedConfigDropdown:GetValue()
+        if selectedConfig then
+            applySavedConfiguration(selectedConfig)  -- Apply the selected saved configuration
+        end
+    end,
+})
+
+-- Dropdown for selecting previously saved configurations
+local savedConfigNames = {}
+
+-- Populate the dropdown with the names of previously saved configurations
+for configName, _ in pairs(savedConfig) do
+    table.insert(savedConfigNames, configName)
+end
+
+local SavedConfigDropdown = ConfigTab:CreateDropdown({
+    Name = "Select Saved Configuration",
+    Options = savedConfigNames,
+    CurrentOption = {savedConfigNames[1]},  -- Set default to the first saved configuration
+    MultipleOptions = false,
+    Flag = "SavedConfigDropdown",  -- A unique flag for the dropdown
+    Callback = function(Options)
+        -- Handle any specific actions when the user selects a configuration
+    end,
+})
+
+-- Update dropdown options when a new configuration is saved
+local function updateConfigDropdown()
+    savedConfigNames = {}
+    for configName, _ in pairs(savedConfig) do
+        table.insert(savedConfigNames, configName)
+    end
+    SavedConfigDropdown:SetOptions(savedConfigNames)
+end
+
+-- Trigger the dropdown update whenever a new config is saved
+SaveConfigButton.Callback = function()
+    saveConfiguration()
+    updateConfigDropdown()  -- Update the dropdown after saving a new configuration
+end
+
+-- Optionally, you can display the saved config for easier tracking (Debugging)
+local function showSavedConfig()
+    for configName, config in pairs(savedConfig) do
+        print("Config Name: " .. configName)
+        for partName, partConfig in pairs(config) do
+            print("  Part: " .. partName)
+            print("    Color: " .. tostring(partConfig.color))
+            print("    Transparency: " .. partConfig.transparency)
+            print("    Wrap: " .. tostring(partConfig.wrap))
+        end
+    end
+end
+
+-- Debugging: Show saved configurations (you can remove this later)
+showSavedConfig()
