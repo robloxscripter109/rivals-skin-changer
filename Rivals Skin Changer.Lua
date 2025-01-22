@@ -31,8 +31,35 @@ local Window = Rayfield:CreateWindow({
     }
 })
 
+
+
 -- Skin Changer Tab
 local Tab = Window:CreateTab("Skin Changer", nil) -- Title, Image
+-- Theme Tab for Rayfield themes
+local ThemeTab = Window:CreateTab("Themes", nil)
+
+-- List of available Rayfield themes
+local themeOptions = {
+    "Amethyst", "Amber Glow", "Default", "Bloom", "Dark Blue", 
+    "Green", "Light", "Ocean", "Serenity"
+}
+
+-- Current selected theme
+local selectedTheme = themeOptions[3] -- Default to Amethyst
+
+-- Theme Dropdown
+local ThemeDropdown = ThemeTab:CreateDropdown({
+    Name = "Select Rayfield Theme",
+    Options = themeOptions,
+    CurrentOption = {selectedTheme}, -- Set default to Amethyst
+    MultipleOptions = false,
+    Flag = "ThemeDropdown", -- A unique flag
+    Callback = function(Options)
+        selectedTheme = Options[1]
+        -- Change Rayfield window theme
+        Window.ModifyTheme(selectedTheme)  -- Corrected method to change theme
+    end,
+})
 local root = plr.PlayerScripts.Assets.ViewModels
 local Section = Tab:CreateSection("Skin Changer")
 local weapons = root:GetChildren()
@@ -177,32 +204,6 @@ local function resetWeapon(model)
         clearExistingTextures(model)
     end
 end
-
--- Theme Tab for Rayfield themes
-local ThemeTab = Window:CreateTab("Themes", nil)
-
--- List of available Rayfield themes
-local themeOptions = {
-    "Amethyst", "Amber Glow", "Default", "Bloom", "Dark Blue", 
-    "Green", "Light", "Ocean", "Serenity"
-}
-
--- Current selected theme
-local selectedTheme = themeOptions[3] -- Default to Amethyst
-
--- Theme Dropdown
-local ThemeDropdown = ThemeTab:CreateDropdown({
-    Name = "Select Rayfield Theme",
-    Options = themeOptions,
-    CurrentOption = {selectedTheme}, -- Set default to Amethyst
-    MultipleOptions = false,
-    Flag = "ThemeDropdown", -- A unique flag
-    Callback = function(Options)
-        selectedTheme = Options[1]
-        -- Change Rayfield window theme
-        Window.ModifyTheme(selectedTheme)  -- Corrected method to change theme
-    end,
-})
 
 -- Add reset functionality to the Skin Changer Tab
 local ResetButton = Tab:CreateButton({
