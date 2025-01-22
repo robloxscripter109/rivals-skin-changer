@@ -64,7 +64,7 @@ local WeaponDropdown = Tab:CreateDropdown({
 local wrapstring = plr.PlayerScripts.Assets.WrapTextures:GetChildren()
 local wraps = {}
 
--- No longer filtering out .exe or .dll files
+-- Populating the wraps
 for _, wrap in ipairs(wrapstring) do
     table.insert(wraps, wrap.Name) -- Add all wrap textures without filtering
 end
@@ -112,7 +112,7 @@ local WrapDropdown = Tab:CreateDropdown({
         selectedWrap = Options[1]
         local model = root:FindFirstChild(selectedWeapon)
         if model then
-              -- Remove previous textures
+            clearExistingTextures(model)  -- Remove previous textures
             applyNewWrapTextures(model, selectedWrap)  -- Apply the new wrap
         end
     end
@@ -172,28 +172,6 @@ local function resetWeapon(model)
     end
 end
 
--- Wrap Dropdown
-local wrapstring = plr.PlayerScripts.Assets.WrapTextures:GetChildren()
-local wraps = {}
-
--- No longer filtering out .exe or .dll files
-for _, wrap in ipairs(wrapstring) do
-    table.insert(wraps, wrap.Name) -- Add all wrap textures without filtering
-end
-
--- Function to clear existing textures
-local function clearExistingTextures(model)
-    for _, part in ipairs(model:GetDescendants()) do
-        if part:IsA("BasePart") then
-            for _, decal in ipairs(part:GetChildren()) do
-                if decal:IsA("Texture") then
-                    decal:Destroy()  -- Remove existing textures
-                end
-            end
-        end
-    end
-end
-
 -- Theme Tab for Rayfield themes
 local ThemeTab = Window:CreateTab("Themes", nil)
 
@@ -216,7 +194,7 @@ local ThemeDropdown = ThemeTab:CreateDropdown({
     Callback = function(Options)
         selectedTheme = Options[1]
         -- Change Rayfield window theme
-        Window.ModifyTheme(selectedTheme)
+        Window:ChangeTheme(selectedTheme)  -- Corrected method
     end,
 })
 
@@ -252,7 +230,6 @@ local ColorPicker = Tab:CreateColorPicker({
         end
     end
 })
-
 
 -- Weapon Transparency Slider
 local TransparencySlider = Tab:CreateSlider({
