@@ -89,6 +89,7 @@ local function clearExistingTextures(model)
 end
 
 -- Function to apply new textures
+-- Function to apply new textures only if part is not fully transparent
 local function applyNewWrapTextures(model, wrapName)
     local wrap = plr.PlayerScripts.Assets.WrapTextures:FindFirstChild(wrapName)
     if wrap then
@@ -96,8 +97,11 @@ local function applyNewWrapTextures(model, wrapName)
             if decal:IsA("Texture") then
                 for _, part in ipairs(model:GetDescendants()) do
                     if part:IsA("BasePart") then
-                        local textureClone = decal:Clone()
-                        textureClone.Parent = part
+                        -- Check if part is fully transparent
+                        if part.Transparency < 1 then
+                            local textureClone = decal:Clone()
+                            textureClone.Parent = part
+                        end
                     end
                 end
             end
