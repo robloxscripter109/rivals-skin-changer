@@ -142,92 +142,25 @@ local ResetButton = Tab:CreateButton({
     end,
 })
 
--- New section for color sliders and transparency
+-- New section for color picker
 local ColorSection = Tab:CreateSection("Color Control")
 
--- Red Color Slider
-local RedSlider = Tab:CreateSlider({
-   Name = "Red Color",
-   Range = {0, 255},
-   Increment = 1,
-   Suffix = "Red",
-   CurrentValue = 255,
-   Flag = "Slider2", -- A flag for the slider
-   Callback = function(Value)
-       local model = root:FindFirstChild(selectedWeapon)
-       if model then
-           -- Update the Red component of all parts of the selected weapon
-           for _, part in ipairs(model:GetDescendants()) do
-               if part:IsA("BasePart") then
-                   local currentColor = part.Color
-                   part.Color = Color3.fromRGB(Value, currentColor.G, currentColor.B)
-               end
-           end
-       end
-   end,
-})
-
--- Green Color Slider
-local GreenSlider = Tab:CreateSlider({
-   Name = "Green Color",
-   Range = {0, 255},
-   Increment = 1,
-   Suffix = "Green",
-   CurrentValue = 255,
-   Flag = "Slider3", -- A flag for the slider
-   Callback = function(Value)
-       local model = root:FindFirstChild(selectedWeapon)
-       if model then
-           -- Update the Green component of all parts of the selected weapon
-           for _, part in ipairs(model:GetDescendants()) do
-               if part:IsA("BasePart") then
-                   local currentColor = part.Color
-                   part.Color = Color3.fromRGB(currentColor.R, Value, currentColor.B)
-               end
-           end
-       end
-   end,
-})
-
--- Blue Color Slider
-local BlueSlider = Tab:CreateSlider({
-   Name = "Blue Color",
-   Range = {0, 255},
-   Increment = 1,
-   Suffix = "Blue",
-   CurrentValue = 255,
-   Flag = "Slider4", -- A flag for the slider
-   Callback = function(Value)
-       local model = root:FindFirstChild(selectedWeapon)
-       if model then
-           -- Update the Blue component of all parts of the selected weapon
-           for _, part in ipairs(model:GetDescendants()) do
-               if part:IsA("BasePart") then
-                   local currentColor = part.Color
-                   part.Color = Color3.fromRGB(currentColor.R, currentColor.G, Value)
-               end
-           end
-       end
-   end,
-})
-
--- Weapon Transparency Slider
-local TransparencySlider = Tab:CreateSlider({
-   Name = "Weapon Transparency",
-   Range = {0, 1},
-   Increment = 0.1,
-   Suffix = "Transparency",
-   CurrentValue = 0,
-   Flag = "Slider1", -- A flag for the slider
-   Callback = function(Value)
-       local model = root:FindFirstChild(selectedWeapon)
-       if model then
-           -- Apply transparency to all parts
-           for _, part in ipairs(model:GetDescendants()) do
-               if part:IsA("BasePart") then
-                   part.Transparency = Value
-               end
-           end
-       end
-   end,
+-- Color Picker
+local ColorPicker = Tab:CreateColorPicker({ 
+    Name = "Color Picker",
+    Color = Color3.fromRGB(255, 255, 255),
+    Flag = "ColorPicker1", -- A flag for the configuration
+    Callback = function(Value)
+        -- The callback function that is called every time the color is selected
+        -- 'Value' will be the Color3 value selected from the color picker
+        local model = root:FindFirstChild(selectedWeapon)
+        if model then
+            -- Apply the selected color to all parts of the selected weapon
+            for _, part in ipairs(model:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.Color = Value
+                end
+            end
+        end
+    end
 })
