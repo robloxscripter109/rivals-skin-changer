@@ -31,6 +31,7 @@ local Window = Rayfield:CreateWindow({
     }
 })
 
+-- Skin Changer Tab
 local Tab = Window:CreateTab("Skin Changer", nil) -- Title, Image
 local root = plr.PlayerScripts.Assets.ViewModels
 local Section = Tab:CreateSection("Skin Changer")
@@ -59,6 +60,29 @@ local WeaponDropdown = Tab:CreateDropdown({
     end,
 })
 
+-- Reset Weapon Button
+local function resetWeapon(model)
+    if model then
+        -- Restore original color (assuming it's the default color)
+        for _, part in ipairs(model:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.Color = Color3.fromRGB(255, 255, 255)  -- Reset to default white color
+                part.Transparency = 0  -- Reset transparency to 0
+            end
+        end
+        
+        -- Restore default material (assuming it's "Plastic")
+        for _, part in ipairs(model:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.Material = Enum.Material.Plastic
+            end
+        end
+
+        -- Clear any existing wrap textures
+        clearExistingTextures(model)
+    end
+end
+
 -- Wrap Dropdown
 local wrapstring = plr.PlayerScripts.Assets.WrapTextures:GetChildren()
 local wraps = {}
@@ -81,98 +105,46 @@ local function clearExistingTextures(model)
     end
 end
 
--- Function to apply new textures
-local function applyNewWrapTextures(model, wrapName)
-    local wrap = plr.PlayerScripts.Assets.WrapTextures:FindFirstChild(wrapName)
-    if wrap then
-        for _, decal in ipairs(wrap:GetChildren()) do
-            if decal:IsA("Texture") then
-                for _, part in ipairs(model:GetDescendants()) do
-                    if part:IsA("BasePart") then
-                        local textureClone = decal:Clone()
-                        textureClone.Parent = part
-                    end
-                end
-            end
-        end
-    end
-end
+-- Theme Tab for Rayfield themes
+local ThemeTab = Window:CreateTab("Themes", nil)
 
--- Wrap select dropdown
-local selectedWrap = wraps[1]
+-- List of available Rayfield themes
+local themeOptions = {
+    "Amethyst", "Autumn", "Cyan", "Forest", "Indigo", 
+    "Lime", "Maroon", "Navy", "Olive", "Purple", "SeaGreen", 
+    "Silver", "Sky", "Teal", "Violet", "Yellow"
+}
 
-local WrapDropdown = Tab:CreateDropdown({
-    Name = "Wrap Select",
-    Options = wraps,
-    CurrentOption = {selectedWrap}, -- Default to the first wrap
+-- Current selected theme
+local selectedTheme = themeOptions[1] -- Default to Amethyst
+
+-- Theme Dropdown
+local ThemeDropdown = ThemeTab:CreateDropdown({
+    Name = "Select Rayfield Theme",
+    Options = themeOptions,
+    CurrentOption = {selectedTheme}, -- Set default to Amethyst
     MultipleOptions = false,
-    Flag = "Dropdown2", -- A flag is the identifier for the configuration file
+    Flag = "ThemeDropdown", -- A unique flag
     Callback = function(Options)
-        selectedWrap = Options[1]
-        local model = root:FindFirstChild(selectedWeapon)
-        if model then
-              -- Remove previous textures
-            applyNewWrapTextures(model, selectedWrap)  -- Apply the new wrap
-        end
-    end
+        selectedTheme = Options[1]
+        -- Change Rayfield window theme
+        Window:ChangeTheme(selectedTheme)
+    end,
 })
 
--- Material Dropdown
-local materialNames = {}
-for _, materialEnum in ipairs(Enum.Material:GetEnumItems()) do
-    table.insert(materialNames, materialEnum.Name)
-end
-
--- Default selected material
-local selectedMaterial1 = materialNames[1] or "Plastic"  -- Default to the first material or "Plastic"
-
--- Material Dropdown
-local MaterialDropdown = Tab:CreateDropdown({
-    Name = "Basic Material Select",
-    Options = materialNames,
-    CurrentOption = {selectedMaterial1}, -- Set default to the value of selectedMaterial
-    MultipleOptions = false,
-    Flag = "Dropdown3", -- A unique flag
-    Callback = function(Options)
-        local selectedMaterialName = Options[1]
+-- Add reset functionality to the Skin Changer Tab
+local ResetButton = Tab:CreateButton({
+    Name = "Reset Weapon to Default",
+    Callback = function()
         local model = root:FindFirstChild(selectedWeapon)
-
         if model then
-            -- Apply the selected material to all parts of the selected weapon
-            for _, part in ipairs(model:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.Material = Enum.Material[selectedMaterialName] or Enum.Material.Plastic
-                end
-            end
+            resetWeapon(model)  -- Call the function to reset the weapon
         end
-    end
-})
-
-local Button = Tab:CreateButton({
-   Name = "Clear all equipped wraps on equipped gun",
-   Callback = function()
-       local model = root:FindFirstChild(selectedWeapon) -- Find the model again based on the selected weapon
-       if model then
-           clearExistingTextures(model) -- Call the function to clear existing textures
-       end
-   end,
+    end,
 })
 
 -- New section for color sliders and transparency
 local ColorSection = Tab:CreateSection("Color Control")
-
--- Toggle for Color Sliders
-local ColorToggle = Tab:CreateToggle({
-    Name = "Enable Color Sliders",
-    CurrentValue = true,
-    Flag = "ColorToggle", 
-    Callback = function(Value)
-        -- Update the state of the Color Toggle
-        ColorSlidersEnabled = Value
-    end
-})
-
-local ColorSlidersEnabled = true -- Set the initial value for Color Sliders toggle
 
 -- Red Color Slider
 local RedSlider = Tab:CreateSlider({
@@ -183,15 +155,13 @@ local RedSlider = Tab:CreateSlider({
    CurrentValue = 255,
    Flag = "Slider2", -- A flag for the slider
    Callback = function(Value)
-       if ColorSlidersEnabled then -- Check if the color sliders are enabled
-           local model = root:FindFirstChild(selectedWeapon)
-           if model then
-               -- Update the Red component of all parts of the selected weapon
-               for _, part in ipairs(model:GetDescendants()) do
-                   if part:IsA("BasePart") then
-                       local currentColor = part.Color
-                       part.Color = Color3.fromRGB(Value, currentColor.G, currentColor.B)
-                   end
+       local model = root:FindFirstChild(selectedWeapon)
+       if model then
+           -- Update the Red component of all parts of the selected weapon
+           for _, part in ipairs(model:GetDescendants()) do
+               if part:IsA("BasePart") then
+                   local currentColor = part.Color
+                   part.Color = Color3.fromRGB(Value, currentColor.G, currentColor.B)
                end
            end
        end
@@ -207,15 +177,13 @@ local GreenSlider = Tab:CreateSlider({
    CurrentValue = 255,
    Flag = "Slider3", -- A flag for the slider
    Callback = function(Value)
-       if ColorSlidersEnabled then -- Check if the color sliders are enabled
-           local model = root:FindFirstChild(selectedWeapon)
-           if model then
-               -- Update the Green component of all parts of the selected weapon
-               for _, part in ipairs(model:GetDescendants()) do
-                   if part:IsA("BasePart") then
-                       local currentColor = part.Color
-                       part.Color = Color3.fromRGB(currentColor.R, Value, currentColor.B)
-                   end
+       local model = root:FindFirstChild(selectedWeapon)
+       if model then
+           -- Update the Green component of all parts of the selected weapon
+           for _, part in ipairs(model:GetDescendants()) do
+               if part:IsA("BasePart") then
+                   local currentColor = part.Color
+                   part.Color = Color3.fromRGB(currentColor.R, Value, currentColor.B)
                end
            end
        end
@@ -231,15 +199,13 @@ local BlueSlider = Tab:CreateSlider({
    CurrentValue = 255,
    Flag = "Slider4", -- A flag for the slider
    Callback = function(Value)
-       if ColorSlidersEnabled then -- Check if the color sliders are enabled
-           local model = root:FindFirstChild(selectedWeapon)
-           if model then
-               -- Update the Blue component of all parts of the selected weapon
-               for _, part in ipairs(model:GetDescendants()) do
-                   if part:IsA("BasePart") then
-                       local currentColor = part.Color
-                       part.Color = Color3.fromRGB(currentColor.R, currentColor.G, Value)
-                   end
+       local model = root:FindFirstChild(selectedWeapon)
+       if model then
+           -- Update the Blue component of all parts of the selected weapon
+           for _, part in ipairs(model:GetDescendants()) do
+               if part:IsA("BasePart") then
+                   local currentColor = part.Color
+                   part.Color = Color3.fromRGB(currentColor.R, currentColor.G, Value)
                end
            end
        end
@@ -255,29 +221,14 @@ local TransparencySlider = Tab:CreateSlider({
    CurrentValue = 0,
    Flag = "Slider1", -- A flag for the slider
    Callback = function(Value)
-       if TransparencySlidersEnabled then -- Check if the transparency slider is enabled
-           local model = root:FindFirstChild(selectedWeapon)
-           if model then
-               -- Apply transparency to all parts
-               for _, part in ipairs(model:GetDescendants()) do
-                   if part:IsA("BasePart") then
-                       part.Transparency = Value
-                   end
+       local model = root:FindFirstChild(selectedWeapon)
+       if model then
+           -- Apply transparency to all parts
+           for _, part in ipairs(model:GetDescendants()) do
+               if part:IsA("BasePart") then
+                   part.Transparency = Value
                end
            end
        end
    end,
 })
-
--- Toggle for Transparency Slider
-local TransparencyToggle = Tab:CreateToggle({
-    Name = "Enable Transparency Slider",
-    CurrentValue = true,
-    Flag = "TransparencyToggle", 
-    Callback = function(Value)
-        -- Update the state of the Transparency Toggle
-        TransparencySlidersEnabled = Value
-    end
-})
-
-local TransparencySlidersEnabled = true -- Set the initial value for Transparency Toggle
