@@ -127,7 +127,7 @@ local ThemeDropdown = ThemeTab:CreateDropdown({
     Callback = function(Options)
         selectedTheme = Options[1]
         -- Change Rayfield window theme
-        Window:ChangeTheme(selectedTheme)
+        Window.ModifyTheme(selectedTheme)
     end,
 })
 
