@@ -142,10 +142,9 @@ local ResetButton = Tab:CreateButton({
     end,
 })
 
--- New section for color picker
+-- New section for color sliders and transparency
 local ColorSection = Tab:CreateSection("Color Control")
 
--- Color Picker
 local ColorPicker = Tab:CreateColorPicker({ 
     Name = "Color Picker",
     Color = Color3.fromRGB(255, 255, 255),
@@ -163,4 +162,26 @@ local ColorPicker = Tab:CreateColorPicker({
             end
         end
     end
+})
+
+
+-- Weapon Transparency Slider
+local TransparencySlider = Tab:CreateSlider({
+   Name = "Weapon Transparency",
+   Range = {0, 1},
+   Increment = 0.1,
+   Suffix = "Transparency",
+   CurrentValue = 0,
+   Flag = "Slider1", -- A flag for the slider
+   Callback = function(Value)
+       local model = root:FindFirstChild(selectedWeapon)
+       if model then
+           -- Apply transparency to all parts
+           for _, part in ipairs(model:GetDescendants()) do
+               if part:IsA("BasePart") then
+                   part.Transparency = Value
+               end
+           end
+       end
+   end,
 })
