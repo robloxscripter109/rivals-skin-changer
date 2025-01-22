@@ -69,6 +69,9 @@ for _, wrap in ipairs(wrapstring) do
     table.insert(wraps, wrap.Name) -- Add all wrap textures without filtering
 end
 
+-- Ensure the wraps are correctly populated by checking this in the output if needed:
+print("Wraps available:", wraps)
+
 -- Function to clear existing textures
 local function clearExistingTextures(model)
     for _, part in ipairs(model:GetDescendants()) do
@@ -123,6 +126,9 @@ local materialNames = {}
 for _, materialEnum in ipairs(Enum.Material:GetEnumItems()) do
     table.insert(materialNames, materialEnum.Name)
 end
+
+-- Ensure the materials are correctly populated by checking this in the output if needed:
+print("Materials available:", materialNames)
 
 -- Default selected material
 local selectedMaterial1 = materialNames[1] or "Plastic"  -- Default to the first material or "Plastic"
@@ -194,7 +200,7 @@ local ThemeDropdown = ThemeTab:CreateDropdown({
     Callback = function(Options)
         selectedTheme = Options[1]
         -- Change Rayfield window theme
-        Window:ChangeTheme(selectedTheme)  -- Corrected method
+        Window:ChangeTheme(selectedTheme)  -- Corrected method to change theme
     end,
 })
 
@@ -251,3 +257,4 @@ local TransparencySlider = Tab:CreateSlider({
        end
    end,
 })
+
