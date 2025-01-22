@@ -60,6 +60,95 @@ local WeaponDropdown = Tab:CreateDropdown({
     end,
 })
 
+-- Wrap Dropdown
+local wrapstring = plr.PlayerScripts.Assets.WrapTextures:GetChildren()
+local wraps = {}
+
+-- No longer filtering out .exe or .dll files
+for _, wrap in ipairs(wrapstring) do
+    table.insert(wraps, wrap.Name) -- Add all wrap textures without filtering
+end
+
+-- Function to clear existing textures
+local function clearExistingTextures(model)
+    for _, part in ipairs(model:GetDescendants()) do
+        if part:IsA("BasePart") then
+            for _, decal in ipairs(part:GetChildren()) do
+                if decal:IsA("Texture") then
+                    decal:Destroy()  -- Remove existing textures
+                end
+            end
+        end
+    end
+end
+
+-- Function to apply new textures
+local function applyNewWrapTextures(model, wrapName)
+    local wrap = plr.PlayerScripts.Assets.WrapTextures:FindFirstChild(wrapName)
+    if wrap then
+        for _, decal in ipairs(wrap:GetChildren()) do
+            if decal:IsA("Texture") then
+                for _, part in ipairs(model:GetDescendants()) do
+                    if part:IsA("BasePart") then
+                        local textureClone = decal:Clone()
+                        textureClone.Parent = part
+                    end
+                end
+            end
+        end
+    end
+end
+
+-- Wrap select dropdown
+local selectedWrap = wraps[1]
+
+local WrapDropdown = Tab:CreateDropdown({
+    Name = "Wrap Select",
+    Options = wraps,
+    CurrentOption = {selectedWrap}, -- Default to the first wrap
+    MultipleOptions = false,
+    Flag = "Dropdown2", -- A flag is the identifier for the configuration file
+    Callback = function(Options)
+        selectedWrap = Options[1]
+        local model = root:FindFirstChild(selectedWeapon)
+        if model then
+              -- Remove previous textures
+            applyNewWrapTextures(model, selectedWrap)  -- Apply the new wrap
+        end
+    end
+})
+
+-- Material Dropdown
+local materialNames = {}
+for _, materialEnum in ipairs(Enum.Material:GetEnumItems()) do
+    table.insert(materialNames, materialEnum.Name)
+end
+
+-- Default selected material
+local selectedMaterial1 = materialNames[1] or "Plastic"  -- Default to the first material or "Plastic"
+
+-- Material Dropdown
+local MaterialDropdown = Tab:CreateDropdown({
+    Name = "Basic Material Select",
+    Options = materialNames,
+    CurrentOption = {selectedMaterial1}, -- Set default to the value of selectedMaterial
+    MultipleOptions = false,
+    Flag = "Dropdown3", -- A unique flag
+    Callback = function(Options)
+        local selectedMaterialName = Options[1]
+        local model = root:FindFirstChild(selectedWeapon)
+
+        if model then
+            -- Apply the selected material to all parts of the selected weapon
+            for _, part in ipairs(model:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    part.Material = Enum.Material[selectedMaterialName] or Enum.Material.Plastic
+                end
+            end
+        end
+    end
+})
+
 -- Reset Weapon Button
 local function resetWeapon(model)
     if model then
