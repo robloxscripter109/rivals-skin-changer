@@ -110,9 +110,8 @@ local ThemeTab = Window:CreateTab("Themes", nil)
 
 -- List of available Rayfield themes
 local themeOptions = {
-    "Amethyst", "Autumn", "Cyan", "Forest", "Indigo", 
-    "Lime", "Maroon", "Navy", "Olive", "Purple", "SeaGreen", 
-    "Silver", "Sky", "Teal", "Violet", "Yellow"
+    "Amethyst", "Amber Glow", "Default", "Bloom", "Dark Blue", 
+    "Green", "Light", "Ocean", "Serenity"
 }
 
 -- Current selected theme
