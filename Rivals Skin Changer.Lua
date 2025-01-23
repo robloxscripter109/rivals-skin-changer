@@ -54,6 +54,7 @@ local function findInvisiblePart(model)
     for _, part in ipairs(model:GetDescendants()) do
         if part:IsA("BasePart") and part.Transparency == 1 then
             invisPart = part
+            print("Found invisible part:", part.Name)  -- Debugging
             break -- Exit once an invisible part is found
         end
     end
@@ -72,7 +73,10 @@ local WeaponDropdown = Tab:CreateDropdown({
 
         -- Check if the model is found and find an invisible part
         if model then
+            print("Selected model:", model.Name)  -- Debugging
             findInvisiblePart(model)
+        else
+            print("Model not found:", selectedWeapon)  -- Debugging
         end
     end,
 })
@@ -136,11 +140,6 @@ local WrapDropdown = Tab:CreateDropdown({
     Flag = "Dropdown2",
     Callback = function(Options)
         selectedWrap = Options[1]
-        local model = root:FindFirstChild(selectedWeapon)
-        if model then
-            clearExistingTextures(model)
-            applyNewWrapTextures(model, selectedWrap)
-        end
     end
 })
 
@@ -235,6 +234,147 @@ local TransparencySlider = Tab:CreateSlider({
     end,
 })
 
+-- Apply Buttons for Transparency, Wrap, and Color
+
+-- Apply Transparency Button
+local ApplyTransparencyButton = Tab:CreateButton({
+    Name = "Apply Transparency",
+    Callback = function()
+        local model = root:FindFirstChild(selectedWeapon)
+        if model then
+            for _, part in ipairs(model:GetDescendants()) do
+                if part:IsA("BasePart") and part ~= invisPart then
+                    part.Transparency = TransparencySlider.CurrentValue
+                end
+            end
+        end
+    end
+})
+
+-- Apply Wrap Button
+local ApplyWrapButton = Tab:CreateButton({
+    Name = "Apply Wrap",
+    Callback = function()
+        local model = root:FindFirstChild(selectedWeapon)
+        if model then
+            applyNewWrapTextures(model, selectedWrap)
+        end
+    end
+})
+
+-- Apply Material Button
+local ApplyMaterialButton = Tab:CreateButton({
+    Name = "Apply Material",
+    Callback = function()
+        local model = root:FindFirstChild(selectedWeapon)
+        if model then
+            -- Ensure MaterialDropdown.CurrentValue is valid
+            local selectedMaterialName = MaterialDropdown.CurrentOption and MaterialDropdown.CurrentOption[1] or nil
+
+            if selectedMaterialName then
+                -- Print out the selected material for debugging
+                print("Selected Material: " .. selectedMaterialName)
+
+                local selectedMaterial = Enum.Material[selectedMaterialName]
+
+                -- Ensure the material is valid
+                if selectedMaterial then
+                    -- Loop through all the parts of the selected weapon model
+                    for _, part in ipairs(model:GetDescendants()) do
+                        if part:IsA("BasePart") and part ~= invisPart then -- Skip invisible part
+                            part.Material = selectedMaterial  -- Apply the material to the part
+                        end
+                    end
+                else
+                    Rayfield:Notify({
+                        Title = "Error",
+                        Content = "Invalid material selected.",
+                        Duration = 6.5,
+                        Image = nil
+                    })
+                end
+            else
+                Rayfield:Notify({
+                    Title = "Error",
+                    Content = "No material selected.",
+                    Duration = 6.5,
+                    Image = nil
+                })
+            end
+        else
+            Rayfield:Notify({
+                Title = "Error",
+                Content = "Selected weapon model not found.",
+                Duration = 6.5,
+                Image = nil
+            })
+        end
+    end
+})
+
+-- Apply Color Button
+local ApplyColorButton = Tab:CreateButton({
+    Name = "Apply Color",
+    Callback = function()
+        local model = root:FindFirstChild(selectedWeapon)
+        if model then
+            -- Loop through all the parts of the selected weapon model
+            for _, part in ipairs(model:GetDescendants()) do
+                if part:IsA("BasePart") and not part == invisPart then -- Skip invisible part
+                    part.Color = ColorPicker:GetColor()  -- Apply color from the color picker
+                end
+            end
+        else
+            Rayfield:Notify({
+                Title = "Error",
+                Content = "Selected weapon model not found.",
+                Duration = 6.5,
+                Image = nil
+            })
+        end
+    end
+})
+
+
+-- Remove Wrap Button
+local RemoveWrapButton = Tab:CreateButton({
+    Name = "Remove Wrap",
+    Callback = function()
+        -- Get the model for the selected weapon
+        local model = root:FindFirstChild(selectedWeapon)
+        
+        if model then
+            -- Loop through all the parts of the model
+            for _, part in ipairs(model:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    -- Loop through all the children of the part (to find textures)
+                    for _, decal in ipairs(part:GetChildren()) do
+                        if decal:IsA("Texture") then
+                            decal:Destroy()  -- Remove the texture (wrap)
+                        end
+                    end
+                end
+            end
+
+            -- Notify user that wraps have been removed
+            Rayfield:Notify({
+                Title = "Wrap Removed",
+                Content = "All wraps have been successfully removed from the weapon.",
+                Duration = 6.5,
+                Image = nil
+            })
+        else
+            Rayfield:Notify({
+                Title = "Error",
+                Content = "Weapon model not found.",
+                Duration = 6.5,
+                Image = nil
+            })
+        end
+    end
+})
+
+
 -- Configuration Tab
 local ConfigTab = Window:CreateTab("Configuration", nil)
 
@@ -296,77 +436,6 @@ local SaveConfigButton = ConfigTab:CreateButton({
         saveConfiguration()
     end,
 })
-
-local function applySavedConfiguration(weapon)
-    local model = root:FindFirstChild(weapon)
-    if model and savedConfig[weapon] then
-        local config = savedConfig[weapon]
-
-        for _, part in ipairs(model:GetDescendants()) do
-            if part:IsA("BasePart") then
-                local partConfig = config[part.Name]
-
-                if partConfig then
-                    part.Color = partConfig.color
-                    part.Transparency = partConfig.transparency
-
-                    if partConfig.wrap then
-                        clearExistingTextures(model)
-                        applyNewWrapTextures(model, partConfig.wrap)
-                    end
-                end
-            end
-        end
-
-        print("Configuration applied for " .. weapon)
-    end
-end
-
-local ApplyConfigButton = ConfigTab:CreateButton({
-    Name = "Apply Saved Configuration",
-    Callback = function()
-        local selectedConfig = SavedConfigDropdown.CurrentValue
-        if selectedConfig and #selectedConfig > 0 then
-            applySavedConfiguration(selectedConfig[1]) -- Assuming it's a list with one selected option
-        else
-            Rayfield:Notify({
-                Title = "Error",
-                Content = "No configuration selected.",
-                Duration = 6.5,
-                Image = nil
-            })
-        end
-    end,
-})
-
-local savedConfigNames = {}
-
-for configName, _ in pairs(savedConfig) do
-    table.insert(savedConfigNames, configName)
-end
-
-local SavedConfigDropdown = ConfigTab:CreateDropdown({
-    Name = "Select Saved Configuration",
-    Options = savedConfigNames,
-    CurrentOption = {savedConfigNames[1]},
-    MultipleOptions = false,
-    Flag = "SavedConfigDropdown",
-    Callback = function(Options)
-    end,
-})
-
-local function updateConfigDropdown()
-    savedConfigNames = {}
-    for configName, _ in pairs(savedConfig) do
-        table.insert(savedConfigNames, configName)
-    end
-    SavedConfigDropdown:SetOptions(savedConfigNames)
-end
-
-SaveConfigButton.Callback = function()
-    saveConfiguration()
-    updateConfigDropdown()
-end
 
 -- Debugging (optional)
 local function showSavedConfig()
