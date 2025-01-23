@@ -1,3 +1,4 @@
+
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Players = game:GetService("Players")
 local plr = Players.LocalPlayer
@@ -201,6 +202,7 @@ local ColorPicker = Tab:CreateColorPicker({
             end
         end
     end
+end
 })
 
 local TransparencySlider = Tab:CreateSlider({
@@ -220,7 +222,8 @@ local TransparencySlider = Tab:CreateSlider({
                 end
             end
         end
-    end,
+    end
+end,
 })
 
 -- Configuration Tab
