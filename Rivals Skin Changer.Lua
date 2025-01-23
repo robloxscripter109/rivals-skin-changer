@@ -148,11 +148,15 @@ local MaterialDropdown = Tab:CreateDropdown({
         if model then
             for _, part in ipairs(model:GetDescendants()) do
                 if part:IsA("BasePart") then
+                    if part.Transparency < 1 then
+                            local textureClone = decal:Clone()
+                            textureClone.Parent = part
                     part.Material = Enum.Material[selectedMaterialName] or Enum.Material.Plastic
                 end
             end
         end
     end
+end
 })
 
 -- Reset Weapon Button
@@ -191,6 +195,7 @@ local ColorPicker = Tab:CreateColorPicker({
         if model then
             for _, part in ipairs(model:GetDescendants()) do
                 if part:IsA("BasePart") then
+                    if part.Transparency < 1 then
                     part.Color = Value
                 end
             end
@@ -210,6 +215,7 @@ local TransparencySlider = Tab:CreateSlider({
         if model then
             for _, part in ipairs(model:GetDescendants()) do
                 if part:IsA("BasePart") then
+                    if part.Transparency == 1 then
                     part.Transparency = Value
                 end
             end
