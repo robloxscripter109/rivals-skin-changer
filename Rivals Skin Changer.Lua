@@ -106,7 +106,7 @@ local function applyNewWrapTextures(model, wrapName)
         for _, decal in ipairs(wrap:GetChildren()) do
             if decal:IsA("Texture") then
                 for _, part in ipairs(model:GetDescendants()) do
-                    if part:IsA("BasePart") then
+                    if part:IsA("BasePart") and part ~= invisPart then -- Skip invisible part
                         if part.Transparency < 1 then
                             local textureClone = decal:Clone()
                             textureClone.Parent = part
@@ -165,7 +165,7 @@ local MaterialDropdown = Tab:CreateDropdown({
 
         if model then
             for _, part in ipairs(model:GetDescendants()) do
-                if part:IsA("BasePart") then
+                if part:IsA("BasePart") and part ~= invisPart then -- Skip invisible part
                     part.Material = Enum.Material[selectedMaterialName] or Enum.Material.Plastic
                 end
             end
@@ -177,13 +177,10 @@ local MaterialDropdown = Tab:CreateDropdown({
 local function resetWeapon(model)
     if model then
         for _, part in ipairs(model:GetDescendants()) do
-            if part:IsA("BasePart") then
-                -- Skip resetting the invisible part
-                if part ~= invisPart then
-                    part.Color = Color3.fromRGB(255, 255, 255)  -- Reset to default white color
-                    part.Transparency = 0
-                    part.Material = Enum.Material.Plastic
-                end
+            if part:IsA("BasePart") and part ~= invisPart then -- Skip invisible part
+                part.Color = Color3.fromRGB(255, 255, 255)  -- Reset to default white color
+                part.Transparency = 0
+                part.Material = Enum.Material.Plastic
             end
         end
         clearExistingTextures(model)
@@ -211,11 +208,8 @@ local ColorPicker = Tab:CreateColorPicker({
         local model = root:FindFirstChild(selectedWeapon)
         if model then
             for _, part in ipairs(model:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    -- Skip the invisible part from changing its color
-                    if part ~= invisPart then
-                        part.Color = Value
-                    end
+                if part:IsA("BasePart") and part ~= invisPart then -- Skip invisible part
+                    part.Color = Value
                 end
             end
         end
@@ -233,11 +227,8 @@ local TransparencySlider = Tab:CreateSlider({
         local model = root:FindFirstChild(selectedWeapon)
         if model then
             for _, part in ipairs(model:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    -- Skip the invisible part from changing its transparency
-                    if part ~= invisPart then
-                        part.Transparency = Value
-                    end
+                if part:IsA("BasePart") and part ~= invisPart then -- Skip invisible part
+                    part.Transparency = Value
                 end
             end
         end
