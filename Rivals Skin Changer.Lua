@@ -1,4 +1,3 @@
-
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Players = game:GetService("Players")
 local plr = Players.LocalPlayer
@@ -48,6 +47,18 @@ end
 
 local selectedWeapon = guns[1]  -- Default weapon
 
+-- Transparent part finder
+local invisPart = nil
+
+local function findInvisiblePart(model)
+    for _, part in ipairs(model:GetDescendants()) do
+        if part:IsA("BasePart") and part.Transparency == 1 then
+            invisPart = part
+            break -- Exit once an invisible part is found
+        end
+    end
+end
+
 -- Weapon Dropdown
 local WeaponDropdown = Tab:CreateDropdown({
     Name = "Weapon Select",
@@ -57,6 +68,12 @@ local WeaponDropdown = Tab:CreateDropdown({
     Flag = "Dropdown1",
     Callback = function(Options)
         selectedWeapon = Options[1]
+        local model = root:FindFirstChild(selectedWeapon)
+
+        -- Check if the model is found and find an invisible part
+        if model then
+            findInvisiblePart(model)
+        end
     end,
 })
 
@@ -149,15 +166,11 @@ local MaterialDropdown = Tab:CreateDropdown({
         if model then
             for _, part in ipairs(model:GetDescendants()) do
                 if part:IsA("BasePart") then
-                    if part.Transparency < 1 then
-                            local textureClone = decal:Clone()
-                            textureClone.Parent = part
                     part.Material = Enum.Material[selectedMaterialName] or Enum.Material.Plastic
                 end
             end
         end
     end
-end
 })
 
 -- Reset Weapon Button
@@ -165,9 +178,12 @@ local function resetWeapon(model)
     if model then
         for _, part in ipairs(model:GetDescendants()) do
             if part:IsA("BasePart") then
-                part.Color = Color3.fromRGB(255, 255, 255)  -- Reset to default white color
-                part.Transparency = 0
-                part.Material = Enum.Material.Plastic
+                -- Skip resetting the invisible part
+                if part ~= invisPart then
+                    part.Color = Color3.fromRGB(255, 255, 255)  -- Reset to default white color
+                    part.Transparency = 0
+                    part.Material = Enum.Material.Plastic
+                end
             end
         end
         clearExistingTextures(model)
@@ -196,13 +212,14 @@ local ColorPicker = Tab:CreateColorPicker({
         if model then
             for _, part in ipairs(model:GetDescendants()) do
                 if part:IsA("BasePart") then
-                    if part.Transparency < 1 then
-                    part.Color = Value
+                    -- Skip the invisible part from changing its color
+                    if part ~= invisPart then
+                        part.Color = Value
+                    end
                 end
             end
         end
     end
-end
 })
 
 local TransparencySlider = Tab:CreateSlider({
@@ -217,13 +234,14 @@ local TransparencySlider = Tab:CreateSlider({
         if model then
             for _, part in ipairs(model:GetDescendants()) do
                 if part:IsA("BasePart") then
-                    if part.Transparency == 1 then
-                    part.Transparency = Value
+                    -- Skip the invisible part from changing its transparency
+                    if part ~= invisPart then
+                        part.Transparency = Value
+                    end
                 end
             end
         end
-    end
-end,
+    end,
 })
 
 -- Configuration Tab
