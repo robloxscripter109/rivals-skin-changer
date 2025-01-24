@@ -48,14 +48,14 @@ end
 local selectedWeapon = guns[1]  -- Default weapon
 
 -- Transparent part finder
-local invisPart = nil
+local invisParts = {}
 
 local function findInvisiblePart(model)
     for _, part in ipairs(model:GetDescendants()) do
         if part:IsA("BasePart") and part.Transparency == 1 then
             invisPart = part
-            print("Found invisible part:", part.Name)  -- Debugging
-            break -- Exit once an invisible part is found
+            print(_ .. " Found invisible part:", part.Name)  -- Debugging
+            table.insert(invisParts, invisPart)
         end
     end
 end
@@ -111,7 +111,6 @@ local function applyNewWrapTextures(model, wrapName)
             if decal:IsA("Texture") then
                 for _, part in ipairs(model:GetDescendants()) do
                     if part:IsA("BasePart") and part ~= invisPart then -- Skip invisible part
-                        if part.Transparency < 1 then
                             local textureClone = decal:Clone()
                             textureClone.Parent = part
                         end
@@ -119,15 +118,13 @@ local function applyNewWrapTextures(model, wrapName)
                 end
             end
         end
-    else
+    end
         Rayfield:Notify({
             Title = "Error",
             Content = "Selected wrap not found.",
             Duration = 6.5,
             Image = nil
         })
-    end
-end
 
 -- Wrap select dropdown
 local selectedWrap = wraps[1]
@@ -164,7 +161,7 @@ local MaterialDropdown = Tab:CreateDropdown({
 
         if model then
             for _, part in ipairs(model:GetDescendants()) do
-                if part:IsA("BasePart") and part ~= invisPart then -- Skip invisible part
+                if part:IsA("BasePart") and part ~= invisParts then -- Skip invisible part
                     part.Material = Enum.Material[selectedMaterialName] or Enum.Material.Plastic
                 end
             end
@@ -320,8 +317,8 @@ local ApplyColorButton = Tab:CreateButton({
         if model then
             -- Loop through all the parts of the selected weapon model
             for _, part in ipairs(model:GetDescendants()) do
-                if part:IsA("BasePart") and not part == invisPart then -- Skip invisible part
-                    part.Color = ColorPicker:GetColor()  -- Apply color from the color picker
+                if part:IsA("BasePart") and part ~= invisPart then -- Skip invisible part
+                    part.Color = ColorPicker.Value  -- Apply color from the color picker
                 end
             end
         else
@@ -335,45 +332,200 @@ local ApplyColorButton = Tab:CreateButton({
     end
 })
 
+-- tab for other exploits
+local Tab2 = Window:CreateTab("Other Exploits", nil)
 
--- Remove Wrap Button
-local RemoveWrapButton = Tab:CreateButton({
-    Name = "Remove Wrap",
-    Callback = function()
-        -- Get the model for the selected weapon
-        local model = root:FindFirstChild(selectedWeapon)
-        
-        if model then
-            -- Loop through all the parts of the model
-            for _, part in ipairs(model:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    -- Loop through all the children of the part (to find textures)
-                    for _, decal in ipairs(part:GetChildren()) do
-                        if decal:IsA("Texture") then
-                            decal:Destroy()  -- Remove the texture (wrap)
+-- ESP Settings
+local espEnabled = false  -- Initially, ESP is off
+local useRGB = false  -- Initially, RGB toggle is off
+local espColor = Color3.fromRGB(255, 0, 0)  -- Default color is red
+local espRange = 100  -- Default range (in studs)
+
+-- Define screenGui for drawing UI elements
+local screenGui = Instance.new("ScreenGui", plr.PlayerGui)
+if not screenGui.Parent then
+    screenGui.Parent = plr.PlayerGui
+end
+
+-- Tables to store ESP elements
+local espHighlights = {}
+local espTextLabels = {}
+
+-- Function to convert world position to screen position
+local function worldToScreenPosition(worldPosition)
+    local camera = workspace.CurrentCamera
+    if camera then
+        local screenPosition, onScreen = camera:WorldToScreenPoint(worldPosition)
+        return screenPosition, onScreen
+    else
+        warn("CurrentCamera is not available.")
+        return Vector2.new(0, 0), false  -- Return a fallback value
+    end
+end
+
+-- Function to calculate the distance between two positions
+local function calculateDistance(pos1, pos2)
+    return (pos1 - pos2).Magnitude
+end
+
+-- Function to draw a highlight around an object
+local function drawHighlight(character, color)
+    -- Create the highlight effect for the character
+    local highlight = Instance.new("Highlight")
+    highlight.Parent = character
+    highlight.FillColor = color
+    highlight.OutlineTransparency = 0.7  -- Slight transparency for outline
+    highlight.OutlineColor = color
+    return highlight
+end
+
+-- Function to draw text on the screen with dynamic Y offset based on font size
+local function drawText(position, text, fontSize, color)
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Text = text
+    textLabel.TextSize = fontSize
+    textLabel.TextColor3 = color
+    textLabel.BackgroundTransparency = 1
+    textLabel.Position = UDim2.new(0, position.X, 0, position.Y)
+    textLabel.Parent = screenGui
+    return textLabel  -- Return the text label so it can be tracked for removal
+end
+
+-- Function to check and display ESP for nearby players
+local function displayESP()
+    -- Clear old ESP highlights
+    for _, highlight in pairs(espHighlights) do
+        highlight:Destroy()  -- Destroy the old highlights
+    end
+    espHighlights = {}  -- Reset the highlight table
+
+    -- Clear old ESP text labels
+    for _, label in pairs(espTextLabels) do
+        label:Destroy()  -- Destroy the old text labels
+    end
+    espTextLabels = {}  -- Reset the text table
+
+    -- Iterate over all players
+    for _, otherPlayer in pairs(Players:GetPlayers()) do
+        if otherPlayer ~= plr then
+            local character = otherPlayer.Character
+            if character and character:FindFirstChild("HumanoidRootPart") then
+                local humanoidRootPart = character.HumanoidRootPart
+                local screenPosition, onScreen = worldToScreenPosition(humanoidRootPart.Position)
+
+                if onScreen then
+                    -- Calculate the distance between the local player and the other player
+                    local distance = calculateDistance(plr.Character.HumanoidRootPart.Position, humanoidRootPart.Position)
+
+                    if distance <= espRange then  -- Check if within the selected range
+                        -- Display the highlight around the player
+                        local highlight = drawHighlight(character, espColor)  -- Use the current color for the ESP highlight
+                        -- Store the highlight in the espHighlights table
+                        table.insert(espHighlights, highlight)
+
+                        -- Scale font size based on distance
+                        local fontSize = math.max(14, 100 / distance)  -- Adjust size based on distance
+
+                        -- Dynamic vertical offset based on font size
+                        local offsetY = 40 - (fontSize + 14)  -- As font size increases, text moves further down
+                        local healthOffsetY = 60 - (fontSize + 14)  -- Apply similar logic for health text
+
+                        -- Display the distance text above the highlight
+                        local distanceText = drawText(Vector2.new(screenPosition.X, screenPosition.Y - offsetY), "Distance: " .. math.floor(distance) .. "m", fontSize, Color3.fromRGB(255, 255, 255))
+
+                        -- Store the distance label in the espTextLabels table
+                        table.insert(espTextLabels, distanceText)
+
+                        -- Display the health text with fixed vertical offset
+                        if character:FindFirstChild("Humanoid") then
+                            local health = math.floor(character.Humanoid.Health)
+                            local healthText = drawText(Vector2.new(screenPosition.X, screenPosition.Y - healthOffsetY), "Health: " .. health, fontSize, Color3.fromRGB(255, 255, 255))
+
+                            -- Store the health label in the espTextLabels table
+                            table.insert(espTextLabels, healthText)
                         end
                     end
                 end
             end
-
-            -- Notify user that wraps have been removed
-            Rayfield:Notify({
-                Title = "Wrap Removed",
-                Content = "All wraps have been successfully removed from the weapon.",
-                Duration = 6.5,
-                Image = nil
-            })
-        else
-            Rayfield:Notify({
-                Title = "Error",
-                Content = "Weapon model not found.",
-                Duration = 6.5,
-                Image = nil
-            })
         end
     end
+end
+
+-- Add the ESP toggle button to the Rayfield UI
+local espToggle = Tab2:CreateToggle({
+    Name = "Enable ESP",
+    CurrentValue = espEnabled,
+    Flag = "espToggle",
+    Callback = function(value)
+        espEnabled = value  -- Update the ESP status based on the toggle
+    end,
 })
 
+-- Add RGB toggle for ESP color
+local rgbToggle = Tab2:CreateToggle({
+    Name = "Enable RGB",
+    CurrentValue = useRGB,
+    Flag = "rgbToggle",
+    Callback = function(value)
+        useRGB = value  -- Update the RGB toggle status
+    end,
+})
+
+-- Add the color picker for ESP color
+local espColorPicker = Tab2:CreateColorPicker({
+    Name = "ESP Color",
+    Color = espColor,
+    Flag = "espColorPicker",
+    Callback = function(color)
+        espColor = color  -- Update ESP color based on selection
+    end,
+})
+
+-- Add range slider for ESP distance
+local rangeSlider = Tab2:CreateSlider({
+    Name = "ESP Range",
+    Range = {0, 200},  -- Range from 0 to 200 studs
+    Increment = 5,  -- Increment by 5 studs
+    Suffix = "Studs",  -- Display "Studs" after the value
+    CurrentValue = espRange,
+    Flag = "espRangeSlider",
+    Callback = function(value)
+        espRange = value  -- Update ESP range based on slider value
+    end,
+})
+
+-- RGB effect for ESP color
+local function getRGBColor()
+    local time = tick()
+    local r = math.floor(255 * (math.sin(time / 2) + 1) / 2)
+    local g = math.floor(255 * (math.sin(time / 2 + math.pi / 3) + 1) / 2)
+    local b = math.floor(255 * (math.sin(time / 2 + math.pi / 1.5) + 1) / 2)
+    return Color3.fromRGB(r, g, b)
+end
+
+-- Run ESP every frame if enabled
+game:GetService("RunService").RenderStepped:Connect(function()
+    if espEnabled then
+        -- If RGB is enabled, use RGB color; otherwise, use the selected color
+        if useRGB then
+            espColor = getRGBColor()
+        else
+            espColor = espColorPicker.Color  -- Revert to the selected ESP color
+        end
+        displayESP()
+    else
+        -- If ESP is disabled, clear highlights and text immediately
+        for _, highlight in pairs(espHighlights) do
+            highlight:Destroy()
+        end
+        espHighlights = {}
+
+        for _, label in pairs(espTextLabels) do
+            label:Destroy()
+        end
+        espTextLabels = {}
+    end
+end)
 
 -- Configuration Tab
 local ConfigTab = Window:CreateTab("Configuration", nil)
