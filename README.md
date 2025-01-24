@@ -21,3 +21,4 @@ reset weapon, resets the weapon to its original state and makes it white for som
 
 # WARNING:
 this CAN get you banned, do not use this on your main or DON'T abuse it, it's your choice
+if you get banned don't dm me it is your fault if you did not read the warning
