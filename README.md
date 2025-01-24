@@ -18,3 +18,6 @@ buttons to apply stuff so you dont have to change the values and change them bac
 remove wrap button, self explanitory kinda
 
 reset weapon, resets the weapon to its original state and makes it white for some reason
+
+# WARNING:
+this CAN get you banned, do not use this on your main or DON'T abuse it, it's your choice
