@@ -318,7 +318,7 @@ local ApplyColorButton = Tab:CreateButton({
             -- Loop through all the parts of the selected weapon model
             for _, part in ipairs(model:GetDescendants()) do
                 if part:IsA("BasePart") and part ~= invisPart then -- Skip invisible part
-                    part.Color = ColorPicker.Value  -- Apply color from the color picker
+                    part.Color = ColorPicker:GetColor()  -- Apply color from the color picker
                 end
             end
         else
@@ -337,19 +337,22 @@ local Tab2 = Window:CreateTab("Other Exploits", nil)
 
 -- ESP Settings
 local espEnabled = false  -- Initially, ESP is off
+local lineEspEnabled = false  -- Initially, Line ESP is off
 local useRGB = false  -- Initially, RGB toggle is off
 local espColor = Color3.fromRGB(255, 0, 0)  -- Default color is red
 local espRange = 100  -- Default range (in studs)
 
 -- Define screenGui for drawing UI elements
-local screenGui = Instance.new("ScreenGui", plr.PlayerGui)
-if not screenGui.Parent then
-    screenGui.Parent = plr.PlayerGui
-end
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "ESP_ScreenGui"
 
 -- Tables to store ESP elements
 local espHighlights = {}
 local espTextLabels = {}
+local espLines = {}
+
+-- Frame count to track every 2 frames
+local frameCount = 0
 
 -- Function to convert world position to screen position
 local function worldToScreenPosition(worldPosition)
@@ -370,7 +373,6 @@ end
 
 -- Function to draw a highlight around an object
 local function drawHighlight(character, color)
-    -- Create the highlight effect for the character
     local highlight = Instance.new("Highlight")
     highlight.Parent = character
     highlight.FillColor = color
@@ -379,7 +381,7 @@ local function drawHighlight(character, color)
     return highlight
 end
 
--- Function to draw text on the screen with dynamic Y offset based on font size
+-- Function to draw text on the screen with fixed Y offset
 local function drawText(position, text, fontSize, color)
     local textLabel = Instance.new("TextLabel")
     textLabel.Text = text
@@ -387,25 +389,76 @@ local function drawText(position, text, fontSize, color)
     textLabel.TextColor3 = color
     textLabel.BackgroundTransparency = 1
     textLabel.Position = UDim2.new(0, position.X, 0, position.Y)
-    textLabel.Parent = screenGui
+    textLabel.Parent = screenGui  -- Store in the ESP ScreenGui
     return textLabel  -- Return the text label so it can be tracked for removal
+end
+
+-- Function to draw a line between two 2D screen points
+local function drawLine(startPos, endPos, color)
+    local line = Instance.new("Frame")
+    line.AnchorPoint = Vector2.new(0.5, 0.0)
+    line.Size = UDim2.new(0, (startPos - endPos).Magnitude, 0, 2)  -- Length of the line
+    line.Position = UDim2.new(0, (startPos.X + endPos.X) / 2, 0, (startPos.Y + endPos.Y) / 2)  -- Midpoint of the line
+    line.BackgroundColor3 = color
+    line.Rotation = math.deg(math.atan2(endPos.Y - startPos.Y, endPos.X - startPos.X))  -- Rotate to connect the points
+    line.Parent = screenGui  -- Store in the ESP ScreenGui
+    return line
+end
+
+-- Function to ensure all ESP elements are visible/active
+local function ensureAllESPElementsActive()
+    -- Loop through each highlight and ensure it's Active
+    for _, highlight in pairs(espHighlights) do
+        if highlight and highlight.Enabled == false then
+            highlight.Enabled = true  -- Set to active (visible)
+        end
+    end
+
+    -- Loop through each text label and ensure it's Visible
+    for _, label in pairs(espTextLabels) do
+        if label and label.Visible == false then
+            label.Visible = true  -- Set to visible
+        end
+    end
+
+    -- Loop through each line and ensure it's Active (visible)
+    for _, line in pairs(espLines) do
+        if line and line.Visible == false then
+            line.Visible = true  -- Set to visible
+        end
+    end
 end
 
 -- Function to check and display ESP for nearby players
 local function displayESP()
-    -- Clear old ESP highlights
-    for _, highlight in pairs(espHighlights) do
-        highlight:Destroy()  -- Destroy the old highlights
+    -- Recreate the ScreenGui if it's been removed
+    if not screenGui.Parent then
+        -- Clone the screenGui into MainGui if not already there
+        screenGui.Parent = plr.PlayerGui.MainGui
     end
-    espHighlights = {}  -- Reset the highlight table
 
-    -- Clear old ESP text labels
-    for _, label in pairs(espTextLabels) do
-        label:Destroy()  -- Destroy the old text labels
+    -- Clear old ESP highlights and text labels
+    if espEnabled then
+        for _, highlight in pairs(espHighlights) do
+            highlight:Destroy()  -- Destroy old highlights
+        end
+        espHighlights = {}  -- Reset the highlight table
+
+        for _, label in pairs(espTextLabels) do
+            label:Destroy()  -- Destroy old text labels
+        end
+        espTextLabels = {}  -- Reset the text table
     end
-    espTextLabels = {}  -- Reset the text table
 
-    -- Iterate over all players
+    -- Clear old lines before drawing new ones
+    if lineEspEnabled then
+        for _, line in pairs(espLines) do
+            line:Destroy()  -- Destroy old lines
+        end
+        espLines = {}  -- Reset the lines table
+    end
+
+    -- Iterate over all players and check if they are in range
     for _, otherPlayer in pairs(Players:GetPlayers()) do
         if otherPlayer ~= plr then
             local character = otherPlayer.Character
@@ -413,36 +466,34 @@ local function displayESP()
                 local humanoidRootPart = character.HumanoidRootPart
                 local screenPosition, onScreen = worldToScreenPosition(humanoidRootPart.Position)
 
-                if onScreen then
-                    -- Calculate the distance between the local player and the other player
-                    local distance = calculateDistance(plr.Character.HumanoidRootPart.Position, humanoidRootPart.Position)
+                -- Calculate the distance from the local player
+                local distance = calculateDistance(plr.Character.HumanoidRootPart.Position, humanoidRootPart.Position)
 
-                    if distance <= espRange then  -- Check if within the selected range
-                        -- Display the highlight around the player
+                -- Ensure all players are within range to show the ESP
+                if distance <= espRange then  -- Only display ESP elements if within the range
+                    -- For highlights
+                    if espEnabled then
                         local highlight = drawHighlight(character, espColor)  -- Use the current color for the ESP highlight
-                        -- Store the highlight in the espHighlights table
                         table.insert(espHighlights, highlight)
 
-                        -- Scale font size based on distance
-                        local fontSize = math.max(14, 100 / distance)  -- Adjust size based on distance
-
-                        -- Dynamic vertical offset based on font size
-                        local offsetY = 40 - (fontSize + 14)  -- As font size increases, text moves further down
-                        local healthOffsetY = 60 - (fontSize + 14)  -- Apply similar logic for health text
-
-                        -- Display the distance text above the highlight
-                        local distanceText = drawText(Vector2.new(screenPosition.X, screenPosition.Y - offsetY), "Distance: " .. math.floor(distance) .. "m", fontSize, Color3.fromRGB(255, 255, 255))
-
-                        -- Store the distance label in the espTextLabels table
+                        -- Display distance text
+                        local distanceText = drawText(Vector2.new(screenPosition.X, screenPosition.Y - 40), "Distance: " .. math.floor(distance) .. "m", 14, Color3.fromRGB(255, 255, 255))
                         table.insert(espTextLabels, distanceText)
 
-                        -- Display the health text with fixed vertical offset
+                        -- Display the health text
                         if character:FindFirstChild("Humanoid") then
                             local health = math.floor(character.Humanoid.Health)
-                            local healthText = drawText(Vector2.new(screenPosition.X, screenPosition.Y - healthOffsetY), "Health: " .. health, fontSize, Color3.fromRGB(255, 255, 255))
-
-                            -- Store the health label in the espTextLabels table
+                            local healthText = drawText(Vector2.new(screenPosition.X, screenPosition.Y - 60), "Health: " .. health, 14, Color3.fromRGB(255, 255, 255))
                             table.insert(espTextLabels, healthText)
+                        end
+                    end
+
+                    -- For Line ESP
+                    if lineEspEnabled then
+                        local localPlayerPos, onScreenLocal = worldToScreenPosition(plr.Character.HumanoidRootPart.Position)
+                        if onScreenLocal or distance <= espRange then  -- Allow drawing lines even when off-screen
+                            local line = drawLine(localPlayerPos, screenPosition, espColor)  -- Draw line in ESP color
+                            table.insert(espLines, line)  -- Add this line to the table for tracking
                         end
                     end
                 end
@@ -458,6 +509,16 @@ local espToggle = Tab2:CreateToggle({
     Flag = "espToggle",
     Callback = function(value)
         espEnabled = value  -- Update the ESP status based on the toggle
+    end,
+})
+
+-- Add the Line ESP toggle button to the Rayfield UI
+local lineEspToggle = Tab2:CreateToggle({
+    Name = "Enable Line ESP",
+    CurrentValue = lineEspEnabled,
+    Flag = "lineEspToggle",
+    Callback = function(value)
+        lineEspEnabled = value  -- Update the Line ESP status based on the toggle
     end,
 })
 
@@ -481,38 +542,45 @@ local espColorPicker = Tab2:CreateColorPicker({
     end,
 })
 
--- Add range slider for ESP distance
-local rangeSlider = Tab2:CreateSlider({
+-- Add ESP range slider (Rayfield format)
+local espRangeSlider = Tab2:CreateSlider({
     Name = "ESP Range",
-    Range = {0, 200},  -- Range from 0 to 200 studs
-    Increment = 5,  -- Increment by 5 studs
-    Suffix = "Studs",  -- Display "Studs" after the value
-    CurrentValue = espRange,
-    Flag = "espRangeSlider",
-    Callback = function(value)
-        espRange = value  -- Update ESP range based on slider value
+    Range = {1, 1000},  -- The range for the ESP slider
+    Increment = 1,  -- The increment of the slider
+    Suffix = "Studs",  -- Optional suffix to indicate units
+    CurrentValue = espRange,  -- The current value of the slider
+    Flag = "espRangeSlider",  -- A flag to identify the slider for saving/loading
+    Callback = function(Value)
+        espRange = Value  -- Update ESP range based on slider value
     end,
 })
 
--- RGB effect for ESP color
+-- Helper function to handle RGB color cycling
 local function getRGBColor()
     local time = tick()
-    local r = math.floor(255 * (math.sin(time / 2) + 1) / 2)
-    local g = math.floor(255 * (math.sin(time / 2 + math.pi / 3) + 1) / 2)
-    local b = math.floor(255 * (math.sin(time / 2 + math.pi / 1.5) + 1) / 2)
+    local r = math.abs(math.sin(time * 0.5)) * 255
+    local g = math.abs(math.sin(time * 0.7)) * 255
+    local b = math.abs(math.sin(time * 0.9)) * 255
     return Color3.fromRGB(r, g, b)
 end
 
--- Run ESP every frame if enabled
+-- Run ESP and Line ESP every frame if enabled
 game:GetService("RunService").RenderStepped:Connect(function()
+    frameCount = frameCount + 1  -- Increment frame count
+
+    if frameCount % 2 == 0 then  -- Check every 2 frames
+        -- Ensure the ESP ScreenGui is cloned into the MainGui if it's not already present
+        if not screenGui.Parent then
+            screenGui.Parent = plr.PlayerGui.MainGui  -- Attach the ESP ScreenGui to MainGui
+        end
+    end
+
     if espEnabled then
         -- If RGB is enabled, use RGB color; otherwise, use the selected color
         if useRGB then
-            espColor = getRGBColor()
-        else
-            espColor = espColorPicker.Color  -- Revert to the selected ESP color
+            espColor = getRGBColor()  -- Update color based on RGB
         end
-        displayESP()
+        displayESP()  -- Display all ESP elements
     else
         -- If ESP is disabled, clear highlights and text immediately
         for _, highlight in pairs(espHighlights) do
