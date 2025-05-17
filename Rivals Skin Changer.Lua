@@ -2,7 +2,7 @@ local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/
 local SaveManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/SaveManager.lua"))()
 local InterfaceManager = loadstring(game:HttpGet("https://raw.githubusercontent.com/dawid-scripts/Fluent/master/Addons/InterfaceManager.lua"))()
 local p = game:GetService("Players").LocalPlayer
-local w = p.PlayerScripts.Assets.ViewModels:GetChildren()
+local w = p.PlayerScripts.Assets.ViewModels.Weapons:GetChildren()
 local wraps = p.PlayerScripts.Assets.WrapTextures:GetChildren()
 local wrapmats = game:GetService("MaterialService").Wraps:GetChildren()
 
